@@ -4,26 +4,30 @@ import "./GroundPiece.css";
 import GroundContext from "../../store/ground-context";
 
 const GroundPiece = (props) => {
-  const groundCtx = useContext(GroundContext);
-  const { groundState, lastPlayX, lastPlayY } = groundCtx;
+  const ctx = useContext(GroundContext);
+  const { groundState } = ctx;
   const [stateClick, setStateClick] = useState(false);
   const refDiv = useRef();
   const proxyValue = props.proxyValue;
   const xIndex = props.xIndex;
   const yIndex = props.yIndex;
+  console.log(yIndex);
+  console.log(xIndex);
+  console.log(
+    "Previo ground state: " + yIndex.toString() + " " + xIndex.toString()
+  );
+  console.log(groundState);
+
   const groundPieceState = groundState[yIndex][xIndex];
 
   useState(() => {
-    console.log(lastPlayX.toString() + " " + lastPlayY.toString());
-    if (lastPlayX === xIndex && lastPlayY === yIndex) {
-      if (groundState[yIndex][xIndex] === 1 && stateClick === false) {
-        setStateClick(true);
-        if (proxyValue !== -1) {
-          refDiv.current.innerHTML = proxyValue;
-        }
+    if (groundPieceState === 1 && stateClick === false) {
+      setStateClick(true);
+      if (proxyValue !== -1) {
+        refDiv.current.innerHTML = proxyValue;
       }
     }
-  }, [groundState, lastPlayX, lastPlayY, groundCtx]);
+  }, [groundPieceState, stateClick]);
 
   const clickHandler = () => {
     if (!stateClick) {
