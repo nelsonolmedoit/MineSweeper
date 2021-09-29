@@ -1,43 +1,50 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 
 import "./GroundPiece.css";
+import GroundContext from "../../store/ground-context";
 
 const GroundPiece = (props) => {
+  const groundCtx = useContext(GroundContext);
+  const { groundState, lastPlayX, lastPlayY } = groundCtx;
   const [stateClick, setStateClick] = useState(false);
   const refDiv = useRef();
   const proxyValue = props.proxyValue;
   const xIndex = props.xIndex;
   const yIndex = props.yIndex;
-  const groundState = props.groundState[yIndex][xIndex];
+  const groundPieceState = groundState[yIndex][xIndex];
 
   useState(() => {
-    if (groundState === 1 && stateClick === false) {
-      setStateClick(true);
+    console.log(lastPlayX.toString() + " " + lastPlayY.toString());
+    if (lastPlayX === xIndex && lastPlayY === yIndex) {
+      if (groundState[yIndex][xIndex] === 1 && stateClick === false) {
+        setStateClick(true);
+        if (proxyValue !== -1) {
+          refDiv.current.innerHTML = proxyValue;
+        }
+      }
     }
-  }, [groundState]);
+  }, [groundState, lastPlayX, lastPlayY, groundCtx]);
 
   const clickHandler = () => {
-    setStateClick(true);
-    if (proxyValue !== -1) {
-      refDiv.current.innerHTML = proxyValue;
+    if (!stateClick) {
+      setStateClick(true);
+      if (proxyValue !== -1) {
+        refDiv.current.innerHTML = proxyValue;
+      }
+      props.onCheckGround(xIndex, yIndex);
     }
-    props.onCheckGround(xIndex, yIndex);
   };
 
-  const divCssHandler = () => {
-    let response = "";
+  if (groundPieceState) {
+    refDiv.current.innerHTML = proxyValue;
+  }
 
-    if (stateClick) {
-      response = "GroundPiece red";
-    } else {
-      response = "GroundPiece blue";
-    }
-
-    return response;
-  };
+  const divCssHandler = `${
+    groundPieceState ? "GroundPiece red" : "GroundPiece blue"
+  }`;
 
   return (
-    <div ref={refDiv} onClick={clickHandler} className={divCssHandler()}></div>
+    <div ref={refDiv} onClick={clickHandler} className={divCssHandler}></div>
   );
 };
 

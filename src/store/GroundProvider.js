@@ -2,25 +2,31 @@ import { useReducer } from "react";
 import GroundContext from "./ground-context";
 
 const defaultGroundState = {
-  groundState: [],
-  groundProximity: [],
+  groundState: [[]],
+  groundProximity: [[]],
   lastPlayX: 0,
   lastPlayY: 0,
 };
 
 const groundReducer = (state, action) => {
   if (action.type === "SET_GROUND_STATE") {
-    const udpatedState = { ...state, groundState: action.groundState };
+    const udpatedState = { ...state};
+    udpatedState.groundState = [...action.groundState];
+
+    for(let y=0; y < udpatedState.groundState.lenght;y++){
+       udpatedState.groundState[y] = [...action.groundState[y]]
+    }
 
     return udpatedState;
   }
   if (action.type === "SET_GROUND_PROXIMITY") {
-    const udpatedState = { ...state, groundProximity: action.groundProximity };
+    const udpatedState = { ...state};
+    udpatedState.groundProximity = [...action.groundProximity];
 
     return udpatedState;
   }
   if (action.type === "SET_LAST_PLAY") {
-    const udpatedState = { ...state };
+    const udpatedState = { ...state  };
     udpatedState.lastPlayX = action.lastPlay.x;
     udpatedState.lastPlayY = action.lastPlay.y;
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useContext, useRef } from "react";
 import GroundPiece from "./GroundPiece";
 
-import groundContext from '../../store/ground-context.js';
+import groundContext from "../../store/ground-context.js";
 
 const DUMMY_GROUND = [
   [0, 0, 0, 1, 0],
@@ -11,22 +11,18 @@ const DUMMY_GROUND = [
   [0, 0, 0, 0, 1],
 ];
 
-const lastPlayDTO = {
-  x: 0,
-  y: 0,
-};
 
 const GameBoard = (props) => {
   const groundCtx = useContext(groundContext);
-  const {lastPlayX, lastPlayY} = groundCtx;
+  const { groundProximity, groundState } = groundCtx;
   const [createdGround, setCreatedGround] = useState(false);
-  const [proximityGround, setProximityGround] = useState();
-  const [ground, setGround] = useState([]);
-  const [stateGround, setStateGround] = useState([]);
+  //const [proximityGround, setProximityGround] = useState();
+  //const [ground, setGround] = useState([]);
+  //const [stateGround, setStateGround] = useState([]);
   const refDivLastPlay = useRef();
   //const [lastPlay, setLastPlay] = useState(lastPlayDTO);
-  const xMax = 5;
-  const yMax = 5;
+  const xMax = +5;
+  const yMax = +5;
 
   const CheckNeighbors = (x, ground, y, xMax, yMax) => {
     let proxMines = 0;
@@ -44,157 +40,275 @@ const GameBoard = (props) => {
     return proxMines;
   };
 
-  const CreateGround = (minesQuantity) => {
-    setCreatedGround(true);
-    // const xMax = 5;
-    // const yMax = 5;
-    // let minesCounter = 0;
-    // let matrix = [yMax];
-    // // matrix[(0, 1)] = "hola viteh";
-    // // console.log(matrix[(0, 1)]);
-    // let hasMine = 0;
-    // let randomValue = 0;
+  const ValidateGroundPieceState = (y, x, gProximity, cSurroundingGround) => {
+    console.log('inside validate group piced state: ' + y.toString() + ' ' + x.toString());
+    console.log('GProximity');
+    console.log(gProximity);
+    
+    const groundAlreadyChecked = cSurroundingGround.findIndex(ground => ground.x === +x && ground.y === +y);
 
-    // for (let y = 0; y < yMax; y++) {
-    //   matrix[y] = [xMax];
-    // }
-
-    // for (let y = 0; y < yMax; y++) {
-    //   for (let x = 0; x < xMax; x++) {
-    //     hasMine = 0;
-
-    //     if (minesCounter <= minesQuantity) {
-    //       randomValue = Math.random();
-    //       if (randomValue > 0.5) {
-    //         minesCounter++;
-    //         //hasMine = true;
-    //         hasMine = randomValue;
-    //       }
-    //     }
-
-    //     //matrix[x][y] = hasMine ? 1 : 0;
-    //     matrix[x][y] = Number.parseFloat(hasMine).toPrecision(3);
-    //   }
-    // }
-
-    CreateProximityGround(DUMMY_GROUND);
-    setGround(DUMMY_GROUND);
-  };
-
-  const CreateGame = () => {
-    let matrix = new Array(yMax).fill([], 0, yMax);
-    matrix = matrix.map((y) => new Array(xMax).fill(0, 0, xMax));
-    console.log(matrix);
-    setStateGround(matrix);
-  };
-
-  const CreateProximityGround = (ground) => {
-    const yMax = ground.length;
-    const xMax = ground[0].length;
-
-    let newProximityGround = new Array(yMax).fill([], 0, yMax);
-    newProximityGround = newProximityGround.map((y) =>
-      new Array(xMax).fill(0, 0, xMax)
-    );
-    let proxMines = 0;
-    console.log(newProximityGround);
-    for (let y = 0; y < yMax; y++) {
-      for (let x = 0; x < xMax; x++) {
-        if (ground[y][x] === 0) {
-          proxMines = CheckNeighbors(x, ground, y, xMax, yMax);
-          newProximityGround[y][x] = proxMines;
+    console.log('groundAlreadyChecked:' + groundAlreadyChecked);
+    if (groundAlreadyChecked === -1 && gProximity) {
+      console.log('GProx X/Y:' + gProximity[y][x]);
+      const groundOk = gProximity[+y][+x] === 0;      
+      console.log('Ground OK:' + groundOk);
+      if (groundOk) {    
+        console.log('surroundingGround.length: ' + cSurroundingGround.length);
+        let newCheckedPosition = {x: +x, y: +y, groundOk, checked: false};
+        if (cSurroundingGround.length === 0 ){
+          cSurroundingGround = [newCheckedPosition]
         } else {
-          newProximityGround[y][x] = -1;
+          cSurroundingGround = [...cSurroundingGround, newCheckedPosition];
+        }
+      }
+      //console.log('final surrounding object:' + cSurroundingGround);
+    }
+
+    return cSurroundingGround;
+  }
+
+  const ValidateCleanSurroundingGround = (gProximity, x, y,cleanSurroundingGround) => {
+    console.log('VALIDATE CLEAN SURROUNDINGS: ' + y.toString() + ' ' + x.toString());
+    // console.log(gProximity);
+     console.log(cleanSurroundingGround);
+    let csgIndex = cleanSurroundingGround.findIndex(csg => csg.x === +x && csg.y === +y);
+    cleanSurroundingGround[csgIndex].checked = true;
+
+    cleanSurroundingGround = x > 0 ? ValidateGroundPieceState([y],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    console.log('test1 passed');
+    cleanSurroundingGround = x < xMax - 1 ? ValidateGroundPieceState([y],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    console.log('test2 passed');
+    cleanSurroundingGround = y > 0 ? ValidateGroundPieceState([y - 1],[x], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    console.log('test3 passed');
+    cleanSurroundingGround = y < yMax - 1 ? ValidateGroundPieceState([y + 1],[x], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    console.log('test4 passed');
+
+    // cleanSurroundingGround = y > 0 && x > 0 ? ValidateGroundPieceState([y - 1],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    // console.log('test5 passed');
+    // cleanSurroundingGround = y > 0 && x < xMax - 1 ? ValidateGroundPieceState([y - 1],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    // console.log('test6 passed');
+    // cleanSurroundingGround = y < yMax - 1 && x > 0 ? ValidateGroundPieceState([y + 1],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    // console.log('test7 passed');
+    // cleanSurroundingGround = y < yMax - 1 && x < xMax - 1 ? ValidateGroundPieceState([y + 1],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    // console.log('test8 passed');
+
+    return cleanSurroundingGround;
+  }
+
+  const UpdateStateAfterSurroundCheck = (gState, cleanSurroundingGround) => {
+    cleanSurroundingGround.forEach(csg => {
+      gState[csg.y][csg.x] = 1;
+    });
+  }
+
+  const CheckNeighborsState = (x,y,gState, gProximity, xMax, yMax) => {
+    console.log('Check neighbors');
+    console.log(gProximity);
+
+    let newGProximity = [...gProximity];
+    let cleanSurroundingGround = [];
+    cleanSurroundingGround = [{x: +x,y: +y, groundOk: true, checked: true}];
+
+    cleanSurroundingGround = ValidateCleanSurroundingGround(newGProximity,x, y,cleanSurroundingGround);
+    console.log('cleanSurroundingGround 1: ');
+    console.log(cleanSurroundingGround);
+    let newPosition;
+    
+    let nextPositionToCheck = cleanSurroundingGround.findIndex(x => x.checked === false);
+    if (nextPositionToCheck !== -1)
+    {
+      console.log('nextPositionToCheck:' + nextPositionToCheck);
+      console.log('cleanSurroundingGround: ' + cleanSurroundingGround);
+
+      newPosition = cleanSurroundingGround[nextPositionToCheck];
+      
+      console.log('NewPosition:' + newPosition.x + ' ' + newPosition.y);
+      console.log('Clean pendings: ' + cleanSurroundingGround.length);
+
+      while (nextPositionToCheck !== -1) {
+        //console.log(cleanSurroundings.length);
+        
+        //console.log(cleanSurroundings.length);      
+        cleanSurroundingGround = ValidateCleanSurroundingGround(newGProximity,newPosition.x,newPosition.y,cleanSurroundingGround)
+
+        nextPositionToCheck = cleanSurroundingGround.findIndex(x => x.checked === false);
+        if (nextPositionToCheck !== -1) {
+          newPosition = cleanSurroundingGround[nextPositionToCheck];
+          console.log('NewPosition:' + newPosition.x + ' ' + newPosition.y);
+          console.log('Clean pendings: ' + cleanSurroundingGround.length);
         }
       }
     }
-    console.log(newProximityGround);
-    setProximityGround(newProximityGround);
-    //groundCtx.setGroundProximity(newProximityGround);
-  };
 
+    UpdateStateAfterSurroundCheck(gState, cleanSurroundingGround);
+
+    console.log(cleanSurroundingGround);
+  }
+  
   useEffect(() => {
-    refDivLastPlay.current.innerHTML = lastPlayX.toString() + ' ' + lastPlayY.toString();
+    const CreateGround = (minesQuantity) => {
+      setCreatedGround(true);
+      // const xMax = 5;
+      // const yMax = 5;
+      // let minesCounter = 0;
+      // let matrix = [yMax];
+      // // matrix[(0, 1)] = "hola viteh";
+      // // console.log(matrix[(0, 1)]);
+      // let hasMine = 0;
+      // let randomValue = 0;
 
-    // setInterval(() => {
-    //   console.log(lastPlayX);
-    //   console.log(lastPlayY);
-    // }, 2000);
+      // for (let y = 0; y < yMax; y++) {
+      //   matrix[y] = [xMax];
+      // }
 
-  }, [lastPlayX, lastPlayY]);
+      // for (let y = 0; y < yMax; y++) {
+      //   for (let x = 0; x < xMax; x++) {
+      //     hasMine = 0;
+
+      //     if (minesCounter <= minesQuantity) {
+      //       randomValue = Math.random();
+      //       if (randomValue > 0.5) {
+      //         minesCounter++;
+      //         //hasMine = true;
+      //         hasMine = randomValue;
+      //       }
+      //     }
+
+      //     //matrix[x][y] = hasMine ? 1 : 0;
+      //     matrix[x][y] = Number.parseFloat(hasMine).toPrecision(3);
+      //   }
+      // }
+
+      //setGround(DUMMY_GROUND);
+      return DUMMY_GROUND;
+    };
+
+    const CreateGame = () => {
+      let matrix = new Array(yMax).fill([], 0, yMax);
+      matrix = matrix.map((y) => new Array(xMax).fill(0, 0, xMax));
+      console.log(matrix);
+      //setStateGround(matrix);
+      groundCtx.setGroundState(matrix);
+    };
+
+    const CreateProximityGround = (ground) => {
+      const yMax = ground.length;
+      const xMax = ground[0].length;
+
+      let newProximityGround = new Array(yMax).fill([], 0, yMax);
+      newProximityGround = newProximityGround.map((y) =>
+        new Array(xMax).fill(0, 0, xMax)
+      );
+      let proxMines = 0;
+      console.log(newProximityGround);
+      for (let y = 0; y < yMax; y++) {
+        for (let x = 0; x < xMax; x++) {
+          if (ground[y][x] === 0) {
+            proxMines = CheckNeighbors(x, ground, y, xMax, yMax);
+            newProximityGround[y][x] = proxMines;
+          } else {
+            newProximityGround[y][x] = -1;
+          }
+        }
+      }
+      console.log(newProximityGround);
+      //setProximityGround(newProximityGround);
+      groundCtx.setGroundProximity(newProximityGround);
+    };
+
+    if (!createdGround) {
+      const ground = CreateGround(20);
+      CreateProximityGround(ground);
+      CreateGame();
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  // useEffect(() => {
+  //   refDivLastPlay.current.innerHTML = lastPlayX.toString() + ' ' + lastPlayY.toString();
+
+  //   // setInterval(() => {
+  //   //   console.log(lastPlayX);
+  //   //   console.log(lastPlayY);
+  //   // }, 2000);
+
+  // }, [lastPlayX, lastPlayY]);
 
   const checkGroundHandler = (x, y) => {
+    //Just For debug
     //alert("Checking" + x.toString() + y.toString());
     const newLastPlay = { x, y };
-    console.log(lastPlayX);
-    console.log(lastPlayY);
-    console.log(newLastPlay)
+    //refDivLastPlay.current.innerHTML = x.toString() + ' ' + y.toString();
+    // console.log(lastPlayX);
+    // console.log(lastPlayY);
+    // console.log(newLastPlay);
     groundCtx.setLastPlay(newLastPlay);
-    let prevStateGround = [...stateGround];
+    
+    //let prevStateGround = [...stateGround];
+    let prevStateGround = [...groundState];
+    let prevGroundProximity = [...groundProximity];
     prevStateGround[y][x] = 1;
+    //prevStateGround[0][0] = 1;
+    console.log('prevStateGround')
+    console.log(prevStateGround);
+    console.log(groundCtx.groundState);
+    console.log('prevGroundProximity');
+    console.log(prevGroundProximity);
+    CheckNeighborsState(x, y, prevStateGround, prevGroundProximity, xMax, yMax);
 
     //let proxMines = CheckNeighbors(x, ground, y, xMax, yMax);
-    let proxMines = proximityGround[y][x];
+    let proxMines = groundProximity[y][x];
     if (proxMines === -1) {
       alert("Game over!");
     }
-
-    console.log(prevStateGround);
     //setStateGround(prevStateGround);
-
-    return proxMines;
   };
 
-  const displayGround = () => {
-    if (createdGround) {
-      console.log(ground);
-      const display = (
-        <table>
-          <tbody>
-            {ground.map((y, yIndex) => (
-              <tr key={`${yIndex}`}>
-                {y.map((x, xIndex) => (
-                  <td key={`${yIndex}${xIndex}`}>
-                    <GroundPiece
-                      proxyValue={proximityGround[yIndex][xIndex]}
-                      xIndex={xIndex}
-                      yIndex={yIndex}
-                      groundState={stateGround}
-                      onCheckGround={checkGroundHandler}
-                    ></GroundPiece>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
+  // const displayGround = () => {
+  //   if (createdGround) {
+  //     console.log(groundState);
+  //     const display = (
+  //       <table>
+  //         <tbody>
+  //           {groundProximity.map((y, yIndex) => (
+  //             <tr key={`${yIndex}`}>
+  //               {y.map((x, xIndex) => (
+  //                 <td key={`${yIndex}${xIndex}`}>
+  //                   <GroundPiece
+  //                     proxyValue={x}
+  //                     xIndex={xIndex}
+  //                     yIndex={yIndex}
+  //                     groundState={groundState}
+  //                     onCheckGround={checkGroundHandler}
+  //                   ></GroundPiece>
+  //                 </td>
+  //               ))}
+  //             </tr>
+  //           ))}
+  //         </tbody>
+  //       </table>
+  //     );
 
-      return display;
-    }
-    return <div></div>;
-  };
-
-  if (!createdGround) {
-    CreateGround(20);
-    CreateGame();
-  }
+  //     return display;
+  //   }
+  //   return <div></div>;
+  // };
 
   return (
     <div>
       <div ref={refDivLastPlay}></div>
-      <div>        
+      <div>
         <table>
           <tbody>
-            {ground.map((y, yIndex) => (
+            {groundProximity.map((y, yIndex) => (
               <tr key={`${yIndex}`}>
                 {y.map((x, xIndex) => (
                   <td key={`${yIndex}${xIndex}`}>
                     <GroundPiece
-                      proxyValue={proximityGround[yIndex][xIndex]}
+                      proxyValue={groundProximity[yIndex][xIndex]}
                       xIndex={xIndex}
                       yIndex={yIndex}
-                      groundState={stateGround}
+                      groundState={groundState}
                       onCheckGround={checkGroundHandler}
                     ></GroundPiece>
                   </td>
