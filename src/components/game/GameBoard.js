@@ -40,7 +40,7 @@ const GameBoard = (props) => {
     return proxMines;
   };
 
-  const ValidateGroundPieceState = (y, x, gProximity, cSurroundingGround) => {
+  const ValidateGroundPieceState = (y, x, gProximity, cSurroundingGround, fromProxy) => {
     console.log('inside validate group piced state: ' + y.toString() + ' ' + x.toString());
     console.log('GProximity');
     console.log(gProximity);
@@ -50,11 +50,16 @@ const GameBoard = (props) => {
     console.log('groundAlreadyChecked:' + groundAlreadyChecked);
     if (groundAlreadyChecked === -1 && gProximity) {
       console.log('GProx X/Y:' + gProximity[y][x]);
-      const groundOk = gProximity[+y][+x] === 0;      
+      let groundOk = false;
+      if (fromProxy) {
+        groundOk = gProximity[+y][+x] === 0;      
+      } else {
+        groundOk = gProximity[+y][+x] !== -1;      
+      }
       console.log('Ground OK:' + groundOk);
       if (groundOk) {    
         console.log('surroundingGround.length: ' + cSurroundingGround.length);
-        let newCheckedPosition = {x: +x, y: +y, groundOk, checked: false};
+        let newCheckedPosition = {x: +x, y: +y, groundProx: gProximity[+y][+x], checked: false};
         if (cSurroundingGround.length === 0 ){
           cSurroundingGround = [newCheckedPosition]
         } else {
@@ -73,24 +78,25 @@ const GameBoard = (props) => {
      console.log(cleanSurroundingGround);
     let csgIndex = cleanSurroundingGround.findIndex(csg => csg.x === +x && csg.y === +y);
     cleanSurroundingGround[csgIndex].checked = true;
+    const fromProxy = cleanSurroundingGround[csgIndex].groundProx !== 0;
 
-    cleanSurroundingGround = x > 0 ? ValidateGroundPieceState([y],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    cleanSurroundingGround = x > 0 ? ValidateGroundPieceState([y],[x - 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
     console.log('test1 passed');
-    cleanSurroundingGround = x < xMax - 1 ? ValidateGroundPieceState([y],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    cleanSurroundingGround = x < xMax - 1 ? ValidateGroundPieceState([y],[x + 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
     console.log('test2 passed');
-    cleanSurroundingGround = y > 0 ? ValidateGroundPieceState([y - 1],[x], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    cleanSurroundingGround = y > 0 ? ValidateGroundPieceState([y - 1],[x], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
     console.log('test3 passed');
-    cleanSurroundingGround = y < yMax - 1 ? ValidateGroundPieceState([y + 1],[x], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
+    cleanSurroundingGround = y < yMax - 1 ? ValidateGroundPieceState([y + 1],[x], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
     console.log('test4 passed');
 
-    // cleanSurroundingGround = y > 0 && x > 0 ? ValidateGroundPieceState([y - 1],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
-    // console.log('test5 passed');
-    // cleanSurroundingGround = y > 0 && x < xMax - 1 ? ValidateGroundPieceState([y - 1],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
-    // console.log('test6 passed');
-    // cleanSurroundingGround = y < yMax - 1 && x > 0 ? ValidateGroundPieceState([y + 1],[x - 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
-    // console.log('test7 passed');
-    // cleanSurroundingGround = y < yMax - 1 && x < xMax - 1 ? ValidateGroundPieceState([y + 1],[x + 1], gProximity, cleanSurroundingGround) : cleanSurroundingGround;
-    // console.log('test8 passed');
+    cleanSurroundingGround = y > 0 && x > 0 ? ValidateGroundPieceState([y - 1],[x - 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
+    console.log('test5 passed');
+    cleanSurroundingGround = y > 0 && x < xMax - 1 ? ValidateGroundPieceState([y - 1],[x + 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
+    console.log('test6 passed');
+    cleanSurroundingGround = y < yMax - 1 && x > 0 ? ValidateGroundPieceState([y + 1],[x - 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
+    console.log('test7 passed');
+    cleanSurroundingGround = y < yMax - 1 && x < xMax - 1 ? ValidateGroundPieceState([y + 1],[x + 1], gProximity, cleanSurroundingGround, fromProxy) : cleanSurroundingGround;
+    console.log('test8 passed');
 
     return cleanSurroundingGround;
   }
@@ -121,7 +127,7 @@ const GameBoard = (props) => {
       console.log('cleanSurroundingGround: ' + cleanSurroundingGround);
 
       newPosition = cleanSurroundingGround[nextPositionToCheck];
-      
+
       console.log('NewPosition:' + newPosition.x + ' ' + newPosition.y);
       console.log('Clean pendings: ' + cleanSurroundingGround.length);
 
