@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import GroundPiece from "./GroundPiece";
+
+import groundContext from '../../store/ground-context.js';
 
 const DUMMY_GROUND = [
   [0, 0, 0, 1, 0],
@@ -15,11 +17,14 @@ const lastPlayDTO = {
 };
 
 const GameBoard = (props) => {
+  const groundCtx = useContext(groundContext);
+  const {lastPlayX, lastPlayY} = groundCtx;
   const [createdGround, setCreatedGround] = useState(false);
   const [proximityGround, setProximityGround] = useState();
   const [ground, setGround] = useState([]);
   const [stateGround, setStateGround] = useState([]);
-  const [lastPlay, setLastPlay] = useState(lastPlayDTO);
+  const refDivLastPlay = useRef();
+  //const [lastPlay, setLastPlay] = useState(lastPlayDTO);
   const xMax = 5;
   const yMax = 5;
 
@@ -87,36 +92,44 @@ const GameBoard = (props) => {
     const yMax = ground.length;
     const xMax = ground[0].length;
 
-    let proximityGround = new Array(yMax).fill([], 0, yMax);
-    proximityGround = proximityGround.map((y) =>
+    let newProximityGround = new Array(yMax).fill([], 0, yMax);
+    newProximityGround = newProximityGround.map((y) =>
       new Array(xMax).fill(0, 0, xMax)
     );
     let proxMines = 0;
-    console.log(proximityGround);
+    console.log(newProximityGround);
     for (let y = 0; y < yMax; y++) {
       for (let x = 0; x < xMax; x++) {
         if (ground[y][x] === 0) {
           proxMines = CheckNeighbors(x, ground, y, xMax, yMax);
-          proximityGround[y][x] = proxMines;
+          newProximityGround[y][x] = proxMines;
         } else {
-          proximityGround[y][x] = -1;
+          newProximityGround[y][x] = -1;
         }
       }
     }
-    console.log(proximityGround);
-    setProximityGround(proximityGround);
+    console.log(newProximityGround);
+    setProximityGround(newProximityGround);
+    //groundCtx.setGroundProximity(newProximityGround);
   };
 
   useEffect(() => {
-    console.log(lastPlay);
-    const prevStateGround = [...stateGround];
-    prevStateGround[0][0] = 1;
-    setStateGround(prevStateGround);
-  }, [lastPlay]);
+    refDivLastPlay.current.innerHTML = lastPlayX.toString() + ' ' + lastPlayY.toString();
+
+    // setInterval(() => {
+    //   console.log(lastPlayX);
+    //   console.log(lastPlayY);
+    // }, 2000);
+
+  }, [lastPlayX, lastPlayY]);
 
   const checkGroundHandler = (x, y) => {
     //alert("Checking" + x.toString() + y.toString());
-    setLastPlay({ x: x, y: y });
+    const newLastPlay = { x, y };
+    console.log(lastPlayX);
+    console.log(lastPlayY);
+    console.log(newLastPlay)
+    groundCtx.setLastPlay(newLastPlay);
     let prevStateGround = [...stateGround];
     prevStateGround[y][x] = 1;
 
@@ -127,7 +140,7 @@ const GameBoard = (props) => {
     }
 
     console.log(prevStateGround);
-    setStateGround(prevStateGround);
+    //setStateGround(prevStateGround);
 
     return proxMines;
   };
@@ -169,8 +182,7 @@ const GameBoard = (props) => {
 
   return (
     <div>
-      {lastPlay.x.toString()} {lastPlay.y.toString()}
-      <div></div>
+      <div ref={refDivLastPlay}></div>
       <div>        
         <table>
           <tbody>
